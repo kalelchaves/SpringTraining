@@ -1,2 +1,3 @@
 # SpringTraining
-Treinamento Spring Boot
+
+Repositório para armazenamento de treinamentos com Spring Boot
