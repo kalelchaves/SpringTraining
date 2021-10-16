@@ -50,9 +50,10 @@ public class TopicosController {
 	private CursoRepository cursoRepository;
 
 	@GetMapping
-	public ApiCollectionResponse<TopicoDTO> lista(ApiFieldRequest field, ApiPageRequest page, ApiSortRequest sort ,String nomeCurso) {
-		ApiJpaCollectionResult<TopicoDTO> topicos;
+	public ApiCollectionResponse<Topico> lista(ApiFieldRequest field, ApiPageRequest page, ApiSortRequest sort ,String nomeCurso) {
+		ApiJpaCollectionResult<Topico> topicos;
 		
+		/*TODO como implementar filtro por curso?? */
 		/*if (nomeCurso != null) {
 			topicos = topicoRepository.findByCursoNome(nomeCurso);
 		} else {
@@ -66,14 +67,10 @@ public class TopicosController {
 
 	@PostMapping
 	@Transactional
-	public ResponseEntity<TopicoDTO> cadastrar(@RequestBody @Valid TopicoForm form, UriComponentsBuilder uriBuilder) {
-		Topico topico = form.converter(this.cursoRepository);
-		this.topicoRepository.save(topico);
-
-		URI uri = uriBuilder.path("/topicos/{id}").buildAndExpand(topico.getId()).toUri();
-		return ResponseEntity.created(uri).body(new TopicoDTO(topico));
-
+	public Topico cadastrar(@RequestBody @Valid Topico form, UriComponentsBuilder uriBuilder) {
+		return topicoRepository.saveAndFlush(form);
 	}
+
 
 	@GetMapping("/{id}")
 	public DetalhesTopicoDTO detalhar(@PathVariable Long id) {
