@@ -8,6 +8,7 @@ import javax.transaction.Transactional;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,8 +20,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.totvs.tjf.api.context.stereotype.ApiError;
+import com.totvs.tjf.api.context.stereotype.ApiGuideline;
+import com.totvs.tjf.api.context.stereotype.ApiGuideline.ApiGuidelineVersion;
+import com.totvs.tjf.api.context.v2.request.ApiFieldRequest;
+import com.totvs.tjf.api.context.v2.request.ApiPageRequest;
+import com.totvs.tjf.api.context.v2.request.ApiSortRequest;
+import com.totvs.tjf.api.context.v2.response.ApiCollectionResponse;
+import com.totvs.tjf.core.api.jpa.repository.ApiJpaCollectionResult;
+
 import br.com.alura.forum.controller.dto.DetalhesTopicoDTO;
 import br.com.alura.forum.controller.dto.TopicoDTO;
+import br.com.alura.forum.controller.exception.TopicoNaoEncontradoException;
 import br.com.alura.forum.controller.form.AtualizacaoTopicoForm;
 import br.com.alura.forum.controller.form.TopicoForm;
 import br.com.alura.forum.controller.repository.CursoRepository;
@@ -28,7 +39,8 @@ import br.com.alura.forum.modelo.Topico;
 import br.com.alura.forum.repository.TopicoRepository;
 
 @RestController
-@RequestMapping("/topicos")
+@RequestMapping("/api/v1/topicos")
+@ApiGuideline(ApiGuidelineVersion.V2)
 public class TopicosController {
 
 	@Autowired
@@ -38,15 +50,18 @@ public class TopicosController {
 	private CursoRepository cursoRepository;
 
 	@GetMapping
-	public List<TopicoDTO> lista(String nomeCurso) {
-		List<Topico> topicos = topicoRepository.findAll();
-		if (nomeCurso != null) {
+	public ApiCollectionResponse<TopicoDTO> lista(ApiFieldRequest field, ApiPageRequest page, ApiSortRequest sort ,String nomeCurso) {
+		ApiJpaCollectionResult<TopicoDTO> topicos;
+		
+		/*if (nomeCurso != null) {
 			topicos = topicoRepository.findByCursoNome(nomeCurso);
 		} else {
-			topicos = topicoRepository.findAll();
-		}
+			topicos = topicoRepository.findAllProjected(field, page, sort);
+		}*/
+		
+		topicos = topicoRepository.findAllProjected(field, page, sort, null);
 
-		return TopicoDTO.converter(topicos);
+		return ApiCollectionResponse.from(topicos);
 	}
 
 	@PostMapping
@@ -61,14 +76,10 @@ public class TopicosController {
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<DetalhesTopicoDTO> detalhar(@PathVariable Long id) {
-		Optional<Topico> topico = topicoRepository.findById(id);
-
-		if (topico.isPresent()) {
-			return ResponseEntity.ok(new DetalhesTopicoDTO(topico.get()));
-		}
-
-		return ResponseEntity.notFound().build();
+	public DetalhesTopicoDTO detalhar(@PathVariable Long id) {
+		return new DetalhesTopicoDTO(topicoRepository.findById(id).orElseThrow(() -> {
+			throw new TopicoNaoEncontradoException(id);
+		}));
 	}
 
 	@PutMapping("/{id}")
